@@ -1,9 +1,16 @@
 package internal
 
+import (
+	"fmt"
+	"github.com/nicseltzer/ddns/pkg/cloudflare"
+)
+
 type Service interface {
+	UpdateDNS()
 }
 
 type service struct {
+	config Config
 }
 
 func NewService() Service {
@@ -11,9 +18,12 @@ func NewService() Service {
 }
 
 func newService() *service {
-	return &service{}
+	return &service{
+		config: NewConfig(),
+	}
 }
 
 func (s *service) UpdateDNS() {
-	client := cloudflare.NewClient()
+	client := cloudflare.NewClient("foo", "bar", "baz")
+	fmt.Println(client)
 }

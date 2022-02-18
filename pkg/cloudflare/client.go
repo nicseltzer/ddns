@@ -4,12 +4,19 @@ type Client interface {
 }
 
 type client struct {
+	APIKey   string
+	ClientID string
+	Token    string
 }
 
-func NewClient() Client {
-	return newClient()
+func NewClient(apiKey, clientID, token string) Client {
+	return newClient(apiKey, clientID, token)
 }
 
-func newClient() *client {
-	return &client{}
+func newClient(apiKey, clientID, token string) *client {
+	return &client{
+		APIKey:   apiKey,
+		ClientID: clientID,
+		Token:    token,
+	}
 }
