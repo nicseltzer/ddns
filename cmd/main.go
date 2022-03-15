@@ -6,5 +6,9 @@ import (
 
 func main() {
 	service := internal.NewService()
-	service.UpdateDNS()
+	service.StartTick()
+	service.Register()
+	service.Start()
+
+	select {}
 }

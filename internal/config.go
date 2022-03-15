@@ -10,15 +10,21 @@ import (
 )
 
 type Config struct {
-	APIToken string
-	Timeout  time.Duration
-	ZoneID   string
+	APIToken        string
+	Timeout         time.Duration
+	ZoneID          string
+	PublicHostname  string
+	PrivateHostname string
+	Port            int
 }
 
 type config struct {
-	ApiToken       string `json:"api_token"`
-	TimeoutSeconds int    `json:"timeout_seconds"`
-	ZoneID         string `json:"zone_id"`
+	ApiToken        string `json:"api_token"`
+	TimeoutSeconds  int    `json:"timeout_seconds"`
+	ZoneID          string `json:"zone_id"`
+	PublicHostname  string `json:"public_hostname"`
+	PrivateHostname string `json:"private_hostname"`
+	Port            int    `json:"service_port"`
 }
 
 func NewConfig() *Config {
@@ -42,8 +48,11 @@ func NewConfig() *Config {
 	}
 
 	return &Config{
-		APIToken: c.ApiToken,
-		Timeout:  time.Duration(c.TimeoutSeconds) * time.Second,
-		ZoneID:   c.ZoneID,
+		APIToken:        c.ApiToken,
+		Timeout:         time.Duration(c.TimeoutSeconds) * time.Second,
+		ZoneID:          c.ZoneID,
+		PublicHostname:  c.PublicHostname,
+		PrivateHostname: c.PrivateHostname,
+		Port:            c.Port,
 	}
 }

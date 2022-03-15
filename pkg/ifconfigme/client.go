@@ -27,7 +27,7 @@ func newClient(timeout time.Duration) *client {
 
 func (c *client) Ip(ctx context.Context) string {
 	h := c.createHTTPClient()
-	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://ifconfig.me", nil)
+	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://ifconfig.me", http.NoBody)
 	if err != nil {
 		return ""
 	}

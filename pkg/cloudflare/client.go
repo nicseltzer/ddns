@@ -77,12 +77,12 @@ type Record struct {
 }
 
 type ListRecordRequest struct {
-	Variant string `json:"type"`
-	Name    string `json:"name"`
+	Type string `json:"type"`
+	Name string `json:"name"`
 }
 
 type CreateRecordRequest struct {
-	Variant  string `json:"type"`
+	Type     string `json:"type"`
 	Name     string `json:"name"`
 	Content  string `json:"content"`
 	TTL      int    `json:"ttl"`
@@ -91,7 +91,7 @@ type CreateRecordRequest struct {
 }
 
 type UpdateRecordRequest struct {
-	Variant string `json:"type"`
+	Type    string `json:"type"`
 	Name    string `json:"name"`
 	Content string `json:"content"`
 	TTL     int    `json:"ttl"`
@@ -112,7 +112,7 @@ func (c *client) List(ctx context.Context, in ListRecordRequest, zoneID string) 
 	request.Header.Set("Content-Type", "application/json")
 
 	requestWithQuery := request.URL.Query()
-	requestWithQuery.Set("type", in.Variant)
+	requestWithQuery.Set("type", in.Type)
 	requestWithQuery.Set("name", in.Name)
 
 	request.URL.RawQuery = requestWithQuery.Encode()
