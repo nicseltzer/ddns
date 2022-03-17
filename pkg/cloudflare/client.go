@@ -14,13 +14,13 @@ const cloudflareApiBase = "https://api.cloudflare.com/client/v4/"
 
 type Client interface {
 	List(ctx context.Context, request ListRecordRequest, zoneID string) []*Record
-	Create(ctx context.Context, request CreateRecordRequest, zoneID string) *CreateResponse
-	Update(ctx context.Context, request UpdateRecordRequest, zoneID, recordID string) *UpdateResponse
+	Create(ctx context.Context, request CreateRecordRequest, zoneID string) (*CreateResponse, error)
+	Update(ctx context.Context, request UpdateRecordRequest, zoneID, recordID string) (*UpdateResponse, error)
 }
 
 type client struct {
-	Token   string
-	timeout time.Duration
+	Token      string
+	httpClient *http.Client
 }
 
 func NewClient(token string, timeout time.Duration) Client {
@@ -29,8 +29,10 @@ func NewClient(token string, timeout time.Duration) Client {
 
 func newClient(token string, timeout time.Duration) *client {
 	return &client{
-		Token:   token,
-		timeout: timeout,
+		Token: token,
+		httpClient: &http.Client{
+			Timeout: timeout,
+		},
 	}
 }
 
@@ -56,7 +58,7 @@ type UpdateResponse struct {
 }
 
 type Record struct {
-	Id         string    `json:"id"`
+	ID         string    `json:"id"`
 	Type       string    `json:"type"`
 	Name       string    `json:"name"`
 	Content    string    `json:"content"`
@@ -100,8 +102,6 @@ type UpdateRecordRequest struct {
 
 // List GET zones/:zone_identifier/dns_records
 func (c *client) List(ctx context.Context, in ListRecordRequest, zoneID string) []*Record {
-	h := c.createHTTPClient()
-
 	url := fmt.Sprintf(cloudflareApiBase+"zones/%s/dns_records", zoneID)
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -117,7 +117,7 @@ func (c *client) List(ctx context.Context, in ListRecordRequest, zoneID string) 
 
 	request.URL.RawQuery = requestWithQuery.Encode()
 
-	response, err := h.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return nil
 	}
@@ -132,7 +132,7 @@ func (c *client) List(ctx context.Context, in ListRecordRequest, zoneID string) 
 	}
 
 	var r *ListResponse
-	err = json.Unmarshal(body, r)
+	err = json.Unmarshal(body, &r)
 	if err != nil {
 		return nil
 	}
@@ -141,81 +141,84 @@ func (c *client) List(ctx context.Context, in ListRecordRequest, zoneID string) 
 }
 
 // Create POST zones/:zone_identifier/dns_records
-func (c *client) Create(ctx context.Context, in CreateRecordRequest, zoneID string) *CreateResponse {
-	h := c.createHTTPClient()
-
+func (c *client) Create(ctx context.Context, in CreateRecordRequest, zoneID string) (*CreateResponse, error) {
 	requestBody, err := json.Marshal(in)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	url := fmt.Sprintf(cloudflareApiBase+"zones/%s/dns_records", zoneID)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	request.Header.Set("Authorization", "Bearer "+c.Token)
 
-	response, err := h.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	var r *CreateResponse
-	err = json.Unmarshal(body, r)
+
+	err = json.Unmarshal(body, &r)
 	if err != nil {
-		return nil
+		return nil, err
+	}
+	if err != nil {
+		return nil, err
 	}
 
-	return r
+	if !r.Success {
+		return nil, fmt.Errorf("encountered error(s) while creating dns record: request=%v,err=%v", request, r.Errors)
+	}
+
+	return r, nil
 }
 
 // Update PUT zones/:zone_identifier/dns_records/:identifier
-func (c *client) Update(ctx context.Context, in UpdateRecordRequest, zoneID, recordID string) *UpdateResponse {
-	h := c.createHTTPClient()
-
+func (c *client) Update(ctx context.Context, in UpdateRecordRequest, zoneID, recordID string) (*UpdateResponse, error) {
 	requestBody, err := json.Marshal(in)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	url := fmt.Sprintf(cloudflareApiBase+"zones/%s/dns_records/%s", zoneID, recordID)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(requestBody))
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	request.Header.Set("Authorization", "Bearer "+c.Token)
 
-	response, err := h.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	body, err := ioutil.ReadAll(response.Body)
 	defer response.Body.Close()
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
 	var r *UpdateResponse
-	err = json.Unmarshal(body, r)
+	err = json.Unmarshal(body, &r)
 	if err != nil {
-		return nil
+		return nil, err
 	}
 
-	return r
-}
-
-func (c *client) createHTTPClient() *http.Client {
-	return &http.Client{
-		Timeout: c.timeout,
+	if !r.Success {
+		return nil, fmt.Errorf("encountered error(s) while creating dns record: request=%v,err=%v", request, r.Errors)
 	}
+
+	return r, nil
+
 }

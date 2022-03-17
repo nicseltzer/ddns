@@ -9,9 +9,9 @@ import (
 func (s *service) Register() {
 	internalMux := s.internalMux
 
-	internalMux.HandleFunc("/v1/ip", func(w http.ResponseWriter, r *http.Request) {
+	internalMux.HandleFunc("/v1/ddns/ip", func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "text/plain")
-		ip := GetCachedIP()
+		ip := s.ipCache.IP()
 		if ip == "" {
 			w.WriteHeader(http.StatusServiceUnavailable)
 			io.WriteString(w, fmt.Sprintf("%d service unavailable", http.StatusServiceUnavailable))

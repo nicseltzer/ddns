@@ -1,8 +1,10 @@
 package internal
 
 import (
+	"context"
 	"fmt"
 	"github.com/gorilla/mux"
+	"github.com/nicseltzer/ddns/pkg/ipcache"
 	"net/http"
 )
 
@@ -10,11 +12,13 @@ type Service interface {
 	Register()
 	StartTick()
 	Start()
+	Scan()
 }
 
 type service struct {
 	config      *Config
 	internalMux *mux.Router
+	ipCache     ipcache.IPCache
 }
 
 func NewService() Service {
@@ -25,6 +29,7 @@ func newService() *service {
 	return &service{
 		config:      NewConfig(),
 		internalMux: mux.NewRouter(),
+		ipCache:     ipcache.NewIPCache(),
 	}
 }
 
@@ -41,14 +46,8 @@ func (s *service) Start() {
 	fmt.Println("listening on: " + listenAddress)
 	go http.ListenAndServe(listenAddress, s.internalMux)
 
-	// Lifecycle
-	s.setup()
-	defer s.tearDown()
-}
-
-func (s *service) setup() {
-}
-
-func (s *service) tearDown() {
-	fmt.Println("shutting down...")
+	fmt.Println("starting ddns...")
+	ip := s.fetchExternalIP(context.Background())
+	s.ipCache.SetIP(ip)
+	s.Scan()
 }

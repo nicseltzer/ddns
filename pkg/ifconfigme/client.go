@@ -8,11 +8,15 @@ import (
 )
 
 type Client interface {
-	Ip(ctx context.Context) string
+	ExternalIP(ctx context.Context) string
+}
+
+type IP struct {
+	string
 }
 
 type client struct {
-	timeout time.Duration
+	httpClient *http.Client
 }
 
 func NewClient(timeout time.Duration) Client {
@@ -21,18 +25,19 @@ func NewClient(timeout time.Duration) Client {
 
 func newClient(timeout time.Duration) *client {
 	return &client{
-		timeout: timeout,
+		httpClient: &http.Client{
+			Timeout: timeout,
+		},
 	}
 }
 
-func (c *client) Ip(ctx context.Context) string {
-	h := c.createHTTPClient()
+func (c *client) ExternalIP(ctx context.Context) string {
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, "https://ifconfig.me", http.NoBody)
 	if err != nil {
 		return ""
 	}
 
-	response, err := h.Do(request)
+	response, err := c.httpClient.Do(request)
 	if err != nil {
 		return ""
 	}
@@ -44,10 +49,4 @@ func (c *client) Ip(ctx context.Context) string {
 	}
 
 	return string(body)
-}
-
-func (c *client) createHTTPClient() *http.Client {
-	return &http.Client{
-		Timeout: c.timeout,
-	}
 }
