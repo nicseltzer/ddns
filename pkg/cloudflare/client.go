@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-const cloudflareApiBase = "https://api.cloudflare.com/client/v4/"
+const cloudflareAPIBaseURI = "https://api.cloudflare.com/client/v4/"
 
 type Client interface {
 	List(ctx context.Context, request ListRecordRequest, zoneID string) []*Record
@@ -102,7 +102,7 @@ type UpdateRecordRequest struct {
 
 // List GET zones/:zone_identifier/dns_records
 func (c *client) List(ctx context.Context, in ListRecordRequest, zoneID string) []*Record {
-	url := fmt.Sprintf(cloudflareApiBase+"zones/%s/dns_records", zoneID)
+	url := fmt.Sprintf(cloudflareAPIBaseURI+"zones/%s/dns_records", zoneID)
 	request, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
 		return nil
@@ -147,7 +147,7 @@ func (c *client) Create(ctx context.Context, in CreateRecordRequest, zoneID stri
 		return nil, err
 	}
 
-	url := fmt.Sprintf(cloudflareApiBase+"zones/%s/dns_records", zoneID)
+	url := fmt.Sprintf(cloudflareAPIBaseURI+"zones/%s/dns_records", zoneID)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
@@ -190,7 +190,7 @@ func (c *client) Update(ctx context.Context, in UpdateRecordRequest, zoneID, rec
 		return nil, err
 	}
 
-	url := fmt.Sprintf(cloudflareApiBase+"zones/%s/dns_records/%s", zoneID, recordID)
+	url := fmt.Sprintf(cloudflareAPIBaseURI+"zones/%s/dns_records/%s", zoneID, recordID)
 	request, err := http.NewRequestWithContext(ctx, http.MethodPut, url, bytes.NewBuffer(requestBody))
 	if err != nil {
 		return nil, err
